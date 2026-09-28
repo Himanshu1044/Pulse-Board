@@ -1,7 +1,9 @@
 import pool from "../config/database.js";
+import { createActivityLog } from "./activityLogService";
 
 export const createTask = async (
     projectId: string,
+    userId: string,
     title: string,
     description?: string,
     status: string = "todo",
@@ -71,7 +73,20 @@ export const createTask = async (
         ]
     );
 
-    return result.rows[0];
+    const task = result.rows[0];
+
+    await createActivityLog(
+        projectId,
+        userId,
+        "task.created",
+        "task",
+        task.id,
+        {
+            title: task.title
+        }
+    );
+
+    return task;
 };
 
 export const getProjectTasks = async (
@@ -104,6 +119,7 @@ export const getProjectTasks = async (
 
 export const updateTask = async (
     projectId: string,
+    userId: string,
     taskId: string,
     title?: string,
     description?: string,
@@ -176,11 +192,27 @@ export const updateTask = async (
         ]
     );
 
-    return result.rows[0];
+    const task = result.rows[0];
+
+    await createActivityLog(
+        projectId,
+        userId,
+        "task.updated",
+        "task",
+        task.id,
+        {
+            title: task.title,
+            status: task.status,
+            priority: task.priority
+        }
+    );
+
+    return task;
 }
 
 export const deleteTask = async (
     projectId: string,
+    userId: string,
     taskId: string
 ) => {
     const result = await pool.query(
@@ -195,5 +227,15 @@ export const deleteTask = async (
         throw new Error("Task not found");
     }
 
-    return result.rows[0];
+    const task = result.rows[0];
+
+    await createActivityLog(
+        projectId,
+        userId,
+        "task.deleted",
+        "task",
+        task.id,
+    );
+
+    return task;
 };

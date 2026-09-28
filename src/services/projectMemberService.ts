@@ -1,33 +1,48 @@
 import pool from "../config/database";
+import { createActivityLog } from "./activityLogService";
 
 export const addProjectMember = async (
-    projectId: string,
-    userId: string,
-    role: string
+  projectId: string,
+  userId: string,
+  role: string,
+  performedBy: string
 ) => {
-    const userResult = await pool.query(
-        `SELECT id, email_verified
+  const userResult = await pool.query(
+    `SELECT id, email_verified
      FROM users
      WHERE id = $1`,
-        [userId]
-    );
+    [userId]
+  );
 
-    if (userResult.rows.length === 0) {
-        throw new Error("User not found");
-    }
+  if (userResult.rows.length === 0) {
+    throw new Error("User not found");
+  }
 
-    if (!userResult.rows[0].email_verified) {
-        throw new Error("User email is not verified");
-    }
+  if (!userResult.rows[0].email_verified) {
+    throw new Error("User email is not verified");
+  }
 
-    const result = await pool.query(
-        `INSERT INTO project_members (project_id, user_id, role)
+  const result = await pool.query(
+    `INSERT INTO project_members (project_id, user_id, role)
      VALUES ($1, $2, $3)
      RETURNING id, project_id, user_id, role, created_at`,
-        [projectId, userId, role]
-    );
+    [projectId, userId, role]
+  );
 
-    return result.rows[0];
+  const member = result.rows[0];
+
+  await createActivityLog(
+    projectId,
+    performedBy,
+    "member.added",
+    "project_member",
+    member.user_id,
+    {
+      role: member.role
+    }
+  );
+
+  return member;
 };
 
 export const getProjectMemberRole = async (
@@ -81,7 +96,8 @@ export const getProjectMembers = async (
 export const updateProjectMemberRole = async (
   projectId: string,
   userId: string,
-  role: string
+  role: string,
+  performedBy: string
 ) => {
   const result = await pool.query(
     `UPDATE project_members
@@ -96,12 +112,26 @@ export const updateProjectMemberRole = async (
     throw new Error("Project member not found");
   }
 
-  return result.rows[0];
+  const member = result.rows[0];
+
+  await createActivityLog(
+    projectId,
+    performedBy,
+    "member.role_updated",
+    "project_member",
+    member.user_id,
+    {
+      role: member.role
+    }
+  );
+
+  return member;
 };
 
 export const removeProjectMember = async (
   projectId: string,
-  userId: string
+  userId: string,
+  performedBy: string
 ) => {
   const result = await pool.query(
     `DELETE FROM project_members
@@ -115,5 +145,18 @@ export const removeProjectMember = async (
     throw new Error("Project member not found");
   }
 
-  return result.rows[0];
+  const member = result.rows[0];
+
+  await createActivityLog(
+    projectId,
+    performedBy,
+    "member.removed",
+    "project_member",
+    member.user_id,
+    {
+      role: member.role
+    }
+  );
+
+  return member;
 };

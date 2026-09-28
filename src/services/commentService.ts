@@ -1,5 +1,6 @@
 import pool from "../config/database";
 import { canComment } from "../utils/projectPermissions";
+import { createActivityLog } from "./activityLogService";
 
 export const createComment = async (
     taskId: string,
@@ -52,7 +53,21 @@ export const createComment = async (
         [taskId, userId, content]
     );
 
-    return result.rows[0];
+    const comment = result.rows[0];
+
+    await createActivityLog(
+        projectId,
+        userId,
+        "comment.created",
+        "comment",
+        comment.id,
+        {
+            taskId,
+            content: comment.content
+        }
+    );
+
+    return comment;
 };
 
 export const getTaskComments = async (
@@ -163,7 +178,21 @@ export const updateComment = async (
         throw new Error("You can only edit your own comments");
     }
 
-    return result.rows[0];
+    const comment = result.rows[0];
+
+    await createActivityLog(
+        projectId,
+        userId,
+        "comment.updated",
+        "comment",
+        comment.id,
+        {
+            taskId: comment.task_id,
+            content: comment.content
+        }
+    );
+
+    return comment;
 };
 
 export const deleteComment = async (
@@ -218,5 +247,18 @@ export const deleteComment = async (
         throw new Error("You can only delete your own comments");
     }
 
-    return result.rows[0];
+    const comment = result.rows[0];
+
+    await createActivityLog(
+        projectId,
+        userId,
+        "comment.deleted",
+        "comment",
+        comment.id,
+        {
+            taskId: comment.task_id
+        }
+    );
+
+    return comment;
 };

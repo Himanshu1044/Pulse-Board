@@ -44,7 +44,6 @@ CREATE TABLE IF NOT EXISTS project_members (
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     role VARCHAR(20) NOT NULL DEFAULT 'member',
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-
     UNIQUE(project_id, user_id)
 );
 
@@ -55,10 +54,12 @@ CREATE TABLE IF NOT EXISTS tasks(
     description TEXT,
     status VARCHAR(20) NOT NULL DEFAULT 'todo',
     priority VARCHAR(20) NOT NULL DEFAULT 'medium',
-    assigned_to UUID REFERENCES users(id) ON DELETE SET NULL,
-    due_date TIMESTAMPTZ,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    assigned_to UUID REFERENCES users(id) ON DELETE
+    SET
+        NULL,
+        due_date TIMESTAMPTZ,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS comments (
@@ -68,4 +69,15 @@ CREATE TABLE IF NOT EXISTS comments (
     content text NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS activity_logs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    action VARCHAR(100) NOT NULL,
+    entity_type VARCHAR(50) NOT NULL,
+    entity_id UUID,
+    metadata JSONB,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

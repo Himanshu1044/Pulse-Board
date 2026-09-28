@@ -1,86 +1,87 @@
 import { Request, Response } from "express";
 import {
-    addProjectMember,
-    getProjectMemberRole,
-    getProjectMembers,
-    updateProjectMemberRole,
-    removeProjectMember
+  addProjectMember,
+  getProjectMemberRole,
+  getProjectMembers,
+  updateProjectMemberRole,
+  removeProjectMember
 } from "../services/projectMemberService";
 
 export const addProjectMemberController = async (
-    req: Request,
-    res: Response
+  req: Request,
+  res: Response
 ) => {
-    try {
-        const projectId = req.params.id as string;
-        const currentUserId = req.user!.userId;
+  try {
+    const projectId = req.params.id as string;
+    const currentUserId = req.user!.userId;
 
-        const currentUserRole = await getProjectMemberRole(
-            projectId,
-            currentUserId
-        );
+    const currentUserRole = await getProjectMemberRole(
+      projectId,
+      currentUserId
+    );
 
-        if (
-            currentUserRole !== "owner" &&
-            currentUserRole !== "manager"
-        ) {
-            return res.status(403).json({
-                message: "You do not have permission to add members"
-            });
-        }
-
-        const { userId, role } = req.body;
-
-        if (
-            !userId ||
-            !["manager", "member", "viewer"].includes(role)
-        ) {
-            return res.status(400).json({
-                message: "Valid userId and role are required"
-            });
-        }
-
-        if (currentUserRole === "manager" && role === "manager") {
-            return res.status(403).json({
-                message: "Only the owner can add managers"
-            });
-        }
-
-        const member = await addProjectMember(
-            projectId,
-            userId,
-            role
-        );
-
-        return res.status(201).json({
-            message: "Member added successfully",
-            member
-        });
-    } catch (error: any) {
-        if (error.message === "User not found") {
-            return res.status(404).json({
-                message: error.message
-            });
-        }
-
-        if (error.message === "User email is not verified") {
-            return res.status(403).json({
-                message: error.message
-            });
-        }
-
-        if (error.code === "23505") {
-            return res.status(409).json({
-                message: "User is already a member of this project"
-            });
-        }
-
-        console.error(error);
-
-        return res.status(500).json({
-            message: "Internal server error"
-        });
+    if (
+      currentUserRole !== "owner" &&
+      currentUserRole !== "manager"
+    ) {
+      return res.status(403).json({
+        message: "You do not have permission to add members"
+      });
     }
+
+    const { userId, role } = req.body;
+
+    if (
+      !userId ||
+      !["manager", "member", "viewer"].includes(role)
+    ) {
+      return res.status(400).json({
+        message: "Valid userId and role are required"
+      });
+    }
+
+    if (currentUserRole === "manager" && role === "manager") {
+      return res.status(403).json({
+        message: "Only the owner can add managers"
+      });
+    }
+
+    const member = await addProjectMember(
+      projectId,
+      userId,
+      role,
+      currentUserId
+    );
+
+    return res.status(201).json({
+      message: "Member added successfully",
+      member
+    });
+  } catch (error: any) {
+    if (error.message === "User not found") {
+      return res.status(404).json({
+        message: error.message
+      });
+    }
+
+    if (error.message === "User email is not verified") {
+      return res.status(403).json({
+        message: error.message
+      });
+    }
+
+    if (error.code === "23505") {
+      return res.status(409).json({
+        message: "User is already a member of this project"
+      });
+    }
+
+    console.error(error);
+
+    return res.status(500).json({
+      message: "Internal server error"
+    });
+  }
 };
 
 export const getProjectMembersController = async (
@@ -153,7 +154,8 @@ export const updateProjectMemberRoleController = async (
     const member = await updateProjectMemberRole(
       projectId,
       targetUserId,
-      role
+      role,
+      currentUserId
     );
 
     return res.status(200).json({
@@ -203,7 +205,8 @@ export const removeProjectMemberController = async (
 
     const member = await removeProjectMember(
       projectId,
-      targetUserId
+      targetUserId,
+      currentUserId
     );
 
     return res.status(200).json({

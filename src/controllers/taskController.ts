@@ -39,6 +39,7 @@ export const createTaskController = async (req: Request, res: Response) => {
 
         const task = await createTask(
             projectId,
+            currentUserId,
             title,
             description,
             status,
@@ -157,6 +158,7 @@ export const updateTaskController = async (
 
         const task = await updateTask(
             projectId,
+            currentUserId,
             taskId,
             title,
             description,
@@ -225,6 +227,7 @@ export const deleteTaskController = async (
 
         const task = await deleteTask(
             projectId,
+            currentUserId,
             taskId
         );
 
