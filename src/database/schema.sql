@@ -47,3 +47,16 @@ CREATE TABLE IF NOT EXISTS project_members (
 
     UNIQUE(project_id, user_id)
 );
+
+CREATE TABLE IF NOT EXISTS tasks(
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+    title VARCHAR(200) NOT NULL,
+    description TEXT,
+    status VARCHAR(20) NOT NULL DEFAULT 'todo',
+    priority VARCHAR(20) NOT NULL DEFAULT 'medium',
+    assigned_to UUID REFERENCES users(id) ON DELETE SET NULL,
+    due_date TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
