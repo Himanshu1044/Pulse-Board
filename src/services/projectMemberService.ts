@@ -1,5 +1,7 @@
 import pool from "../config/database";
 import { createActivityLog } from "./activityLogService";
+import { emitToProject } from "../socketEmitter";
+import { createNotification } from "./notificationService";
 
 export const addProjectMember = async (
   projectId: string,
@@ -31,6 +33,16 @@ export const addProjectMember = async (
 
   const member = result.rows[0];
 
+  await createNotification(
+    userId,
+    projectId,
+    "member.added",
+    "Added to project",
+    "You were added to a project",
+    "project",
+    projectId
+  );
+
   await createActivityLog(
     projectId,
     performedBy,
@@ -40,6 +52,12 @@ export const addProjectMember = async (
     {
       role: member.role
     }
+  );
+
+  emitToProject(
+    projectId,
+    "member.added",
+    member
   );
 
   return member;
@@ -114,6 +132,16 @@ export const updateProjectMemberRole = async (
 
   const member = result.rows[0];
 
+  await createNotification(
+    userId,
+    projectId,
+    "member.role_updated",
+    "Project role updated",
+    `Your project role was changed to ${role}`,
+    "project",
+    projectId
+  );
+
   await createActivityLog(
     projectId,
     performedBy,
@@ -123,6 +151,11 @@ export const updateProjectMemberRole = async (
     {
       role: member.role
     }
+  );
+  emitToProject(
+    projectId,
+    "member.role_updated",
+    member
   );
 
   return member;
@@ -147,6 +180,16 @@ export const removeProjectMember = async (
 
   const member = result.rows[0];
 
+  await createNotification(
+    userId,
+    projectId,
+    "member.removed",
+    "Removed from project",
+    "You were removed from a project",
+    "project",
+    projectId
+  );
+
   await createActivityLog(
     projectId,
     performedBy,
@@ -156,6 +199,12 @@ export const removeProjectMember = async (
     {
       role: member.role
     }
+  );
+
+  emitToProject(
+    projectId,
+    "member.removed",
+    member
   );
 
   return member;

@@ -4,6 +4,7 @@ import projectRoutes from "./routes/projectRoutes";
 import taskRoutes from './routes/taskRoutes';
 import commentRoutes from "./routes/commentRoutes";
 import activityLogRoutes from "./routes/activityLogRoutes";
+import notificationRoutes from "./routes/notificationRoutes";
 
 const app = express();
 app.use(express.json());
@@ -14,5 +15,6 @@ app.use("/api/projects", projectRoutes);
 app.use("/api/", taskRoutes);
 app.use("/api", commentRoutes);
 app.use("/api", activityLogRoutes);
+app.use("/api", notificationRoutes);
 
 export default app;

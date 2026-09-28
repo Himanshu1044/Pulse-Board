@@ -1,6 +1,8 @@
 import pool from "../config/database";
 import { canComment } from "../utils/projectPermissions";
 import { createActivityLog } from "./activityLogService";
+import { emitToProject } from "../socketEmitter";
+import { createNotification } from "./notificationService";
 
 export const createComment = async (
     taskId: string,
@@ -8,7 +10,7 @@ export const createComment = async (
     content: string
 ) => {
     const taskResult = await pool.query(
-        `SELECT project_id
+        `SELECT project_id, assigned_to
          FROM tasks
          WHERE id = $1`,
         [taskId]
@@ -19,6 +21,7 @@ export const createComment = async (
     }
 
     const projectId = taskResult.rows[0].project_id;
+    const assignedTo = taskResult.rows[0].assigned_to;
 
     const memberResult = await pool.query(
         `SELECT role
@@ -55,6 +58,21 @@ export const createComment = async (
 
     const comment = result.rows[0];
 
+    if (
+        assignedTo &&
+        assignedTo !== userId
+    ) {
+        await createNotification(
+            assignedTo,
+            projectId,
+            "comment.created",
+            "New comment",
+            "A new comment was added to your task",
+            "comment",
+            comment.id
+        );
+    }
+
     await createActivityLog(
         projectId,
         userId,
@@ -65,6 +83,12 @@ export const createComment = async (
             taskId,
             content: comment.content
         }
+    );
+
+    emitToProject(
+        projectId,
+        "comment.created",
+        comment
     );
 
     return comment;
@@ -192,6 +216,12 @@ export const updateComment = async (
         }
     );
 
+    emitToProject(
+        projectId,
+        "comment.updated",
+        comment
+    );
+
     return comment;
 };
 
@@ -258,6 +288,12 @@ export const deleteComment = async (
         {
             taskId: comment.task_id
         }
+    );
+
+    emitToProject(
+        projectId,
+        "comment.deleted",
+        comment
     );
 
     return comment;
