@@ -7,14 +7,20 @@ import {
 import {
   registerSchema,
   verifyEmailSchema,
-  loginSchema
+  loginSchema,
+  forgotPasswordSchema
 } from '../validators/authValidator';
 import {
   createVerificationCode,
   verifyEmailCode
 } from '../services/verificationService'
-import emailQueue from "../queues/emailQueue.js";
+import emailQueue from "../queues/emailQueue";
 import { generateToken } from '../utils/jwt';
+import {
+  createPasswordResetToken,
+  resetPassword
+} from '../services/passwordResetService'
+import { resetPasswordSchema } from '../validators/authValidator'
 
 
 export const register = async (req: Request, res: Response) => {
@@ -42,8 +48,7 @@ export const register = async (req: Request, res: Response) => {
 
     return res.status(201).json({
       message: 'User registered successfully',
-      user,
-      verificationCode
+      user
     })
   } catch (error: any) {
     if (error.code === "23505") {
@@ -169,3 +174,82 @@ export const me = async (req: Request, res: Response) => {
     });
   }
 }
+
+export const forgotPassword = async (req: Request, res: Response) => {
+  try {
+    const parsed = forgotPasswordSchema.safeParse(req.body);
+
+    if (!parsed.success) {
+      return res.status(400).json({
+        message: "Invalid email"
+      });
+    }
+
+    const result = await createPasswordResetToken(
+      parsed.data.email
+    );
+
+    return res.status(200).json({
+      message:
+        "If the account exists, a password reset email has been sent."
+    });
+
+  } catch (error) {
+    console.error(error);
+
+    return res.status(500).json({
+      message: "Failed to process password reset request"
+    })
+  }
+}
+
+export const resetPasswordController = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const parsed = resetPasswordSchema.safeParse(
+      req.body
+    );
+
+    if (!parsed.success) {
+      return res.status(400).json({
+        message: "Invalid reset password request"
+      });
+    }
+
+    await resetPassword(
+      parsed.data.email,
+      parsed.data.token,
+      parsed.data.newPassword
+    );
+
+    return res.status(200).json({
+      message: "Password reset successfully"
+    });
+  } catch (error) {
+    console.error(error);
+
+    if (
+      error instanceof Error &&
+      (
+        error.message ===
+        "Invalid password reset request" ||
+        error.message ===
+        "Invalid or expired reset token" ||
+        error.message ===
+        "Reset token expired" ||
+        error.message ===
+        "Reset token has already been used"
+      )
+    ) {
+      return res.status(400).json({
+        message: error.message
+      });
+    }
+
+    return res.status(500).json({
+      message: "Failed to reset password"
+    });
+  }
+};

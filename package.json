@@ -4,7 +4,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "worker": "tsx src/workers/emailWorker.ts"
+    "worker": "tsx watch src/workers/emailWorker.ts"
   },
   "keywords": [],
   "author": "",

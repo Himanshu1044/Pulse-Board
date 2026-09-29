@@ -1,16 +1,25 @@
 import { Worker } from "bullmq";
 import "dotenv/config";
-import { sendVerificationEmail } from "../services/emailService.js";
+import { sendVerificationEmail, sendPasswordResetEmail } from "../services/emailService.js";
 
 const emailWorker = new Worker(
   "pulseboard-email",
   async (job) => {
     console.log("Processing email job:", job.name);
 
-    await sendVerificationEmail(
-      job.data.email,
-      job.data.code
-    );
+    if (job.name === "verification-email") {
+      await sendVerificationEmail(
+        job.data.email,
+        job.data.code
+      );
+    }
+
+    if (job.name === "password-reset") {
+      await sendPasswordResetEmail(
+        job.data.email,
+        job.data.token
+      );
+    }
   },
   {
     connection: {
@@ -18,6 +27,7 @@ const emailWorker = new Worker(
     }
   }
 );
+
 
 emailWorker.on("completed", (job) => {
   console.log(`Email job ${job.id} completed`);
