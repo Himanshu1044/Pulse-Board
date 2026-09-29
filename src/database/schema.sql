@@ -94,3 +94,16 @@ CREATE TABLE IF NOT EXISTS notifications (
     read_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+CREATE TABLE IF NOT EXISTS notification_preferences (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    task_assigned BOOLEAN NOT NULL DEFAULT TRUE,
+    comment_created BOOLEAN NOT NULL DEFAULT TRUE,
+    member_changes BOOLEAN NOT NULL DEFAULT TRUE,
+    email_notifications BOOLEAN NOT NULL DEFAULT TRUE,
+    deadline_reminders BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE(user_id)
+);

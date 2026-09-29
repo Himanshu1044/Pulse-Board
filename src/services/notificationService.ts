@@ -10,6 +10,59 @@ export const createNotification = async (
     entityType?: string,
     entityId?: string
 ) => {
+    const preferenceResult = await pool.query(
+        `SELECT
+            task_assigned,
+            comment_created,
+            member_changes
+         FROM notification_preferences
+         WHERE user_id = $1`,
+        [userId]
+    );
+
+    let preferences = preferenceResult.rows[0];
+
+    if (!preferences) {
+        const createPreferenceResult = await pool.query(
+            `INSERT INTO notification_preferences (
+                user_id
+            )
+            VALUES ($1)
+            RETURNING
+                task_assigned,
+                comment_created,
+                member_changes`,
+            [userId]
+        );
+
+        preferences = createPreferenceResult.rows[0];
+    }
+
+    if (
+        type === "task.assigned" &&
+        !preferences.task_assigned
+    ) {
+        return null;
+    }
+
+    if (
+        type === "comment.created" &&
+        !preferences.comment_created
+    ) {
+        return null;
+    }
+
+    if (
+        [
+            "member.added",
+            "member.role_updated",
+            "member.removed"
+        ].includes(type) &&
+        !preferences.member_changes
+    ) {
+        return null;
+    }
+
     const result = await pool.query(
         `INSERT INTO notifications (
             user_id,

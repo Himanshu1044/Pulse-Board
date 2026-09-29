@@ -98,11 +98,35 @@ export const getProjectTasksController = async (
             });
         }
 
-        const tasks = await getProjectTasks(projectId);
+        const status = req.query.status as string | undefined;
+        const priority = req.query.priority as string | undefined;
+        const assignedTo = req.query.assignedTo as string | undefined;
+        const search = req.query.search as string | undefined;
 
-        return res.status(200).json({
-            tasks
-        });
+        const page = Math.max(
+            parseInt(req.query.page as string) || 1,
+            1
+        );
+
+        const limit = Math.min(
+            Math.max(
+                parseInt(req.query.limit as string) || 10,
+                1
+            ),
+            100
+        );
+
+        const result = await getProjectTasks(
+            projectId,
+            status,
+            priority,
+            assignedTo,
+            search,
+            page,
+            limit
+        );
+
+        return res.status(200).json(result);
     } catch (error) {
         console.error(error);
 
@@ -110,7 +134,7 @@ export const getProjectTasksController = async (
             message: "Internal server error"
         });
     }
-}
+};
 
 export const updateTaskController = async (
     req: Request,

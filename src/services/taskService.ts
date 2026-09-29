@@ -110,31 +110,94 @@ export const createTask = async (
 };
 
 export const getProjectTasks = async (
-    projectId: string
+    projectId: string,
+    status?: string,
+    priority?: string,
+    assignedTo?: string,
+    search?: string,
+    page: number = 1,
+    limit: number = 10
 ) => {
-    const result = await pool.query(
-        `SELECT
-       t.id,
-       t.project_id,
-       t.title,
-       t.description,
-       t.status,
-       t.priority,
-       t.assigned_to,
-       u.name AS assigned_user_name,
-       u.email AS assigned_user_email,
-       t.due_date,
-       t.created_at,
-       t.updated_at
-     FROM tasks t
-     LEFT JOIN users u
-       ON u.id = t.assigned_to
-     WHERE t.project_id = $1
-     ORDER BY t.created_at DESC`,
-        [projectId]
+    const offset = (page - 1) * limit;
+
+    const conditions = ["t.project_id = $1"];
+    const values: unknown[] = [projectId];
+    let parameterIndex = 2;
+
+    if (status) {
+        conditions.push(`t.status = $${parameterIndex}`);
+        values.push(status);
+        parameterIndex++;
+    }
+
+    if (priority) {
+        conditions.push(`t.priority = $${parameterIndex}`);
+        values.push(priority);
+        parameterIndex++;
+    }
+
+    if (assignedTo) {
+        conditions.push(`t.assigned_to = $${parameterIndex}`);
+        values.push(assignedTo);
+        parameterIndex++;
+    }
+
+    if (search) {
+        conditions.push(
+            `(t.title ILIKE $${parameterIndex} OR t.description ILIKE $${parameterIndex})`
+        );
+        values.push(`%${search}%`);
+        parameterIndex++;
+    }
+
+    const whereClause = conditions.join(" AND ");
+
+    const countResult = await pool.query(
+        `SELECT COUNT(*)::int AS total
+         FROM tasks t
+         WHERE ${whereClause}`,
+        values
     );
 
-    return result.rows;
+    const total = countResult.rows[0].total;
+
+    const result = await pool.query(
+        `SELECT
+            t.id,
+            t.project_id,
+            t.title,
+            t.description,
+            t.status,
+            t.priority,
+            t.assigned_to,
+            u.name AS assigned_user_name,
+            u.email AS assigned_user_email,
+            t.due_date,
+            t.created_at,
+            t.updated_at
+         FROM tasks t
+         LEFT JOIN users u
+            ON u.id = t.assigned_to
+         WHERE ${whereClause}
+         ORDER BY t.created_at DESC
+         LIMIT $${parameterIndex}
+         OFFSET $${parameterIndex + 1}`,
+        [
+            ...values,
+            limit,
+            offset
+        ]
+    );
+
+    return {
+        tasks: result.rows,
+        pagination: {
+            page,
+            limit,
+            total,
+            totalPages: Math.ceil(total / limit)
+        }
+    };
 };
 
 export const updateTask = async (
