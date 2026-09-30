@@ -1,10 +1,19 @@
 import pool from "../config/database";
+import { canCreateProject } from "./subscriptionService";
 
 export const createProject = async (
   ownerId: string,
   name: string,
   description?: string
 ) => {
+  const allowed = await canCreateProject(ownerId);
+
+  if (!allowed) {
+    throw new Error(
+      "Project limit reached for your current plan"
+    );
+  }
+
   const client = await pool.connect();
 
   try {

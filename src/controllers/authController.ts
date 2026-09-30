@@ -20,7 +20,8 @@ import {
   createPasswordResetToken,
   resetPassword
 } from '../services/passwordResetService'
-import { resetPasswordSchema } from '../validators/authValidator'
+import { resetPasswordSchema } from '../validators/authValidator';
+import { createFreeSubscription } from "../services/subscriptionService";
 
 
 export const register = async (req: Request, res: Response) => {
@@ -38,6 +39,8 @@ export const register = async (req: Request, res: Response) => {
     const { name, email, password } = result.data;
 
     const user = await createUser(name, email, password);
+
+    await createFreeSubscription(user.id);
 
     const verificationCode = await createVerificationCode(user.id);
 

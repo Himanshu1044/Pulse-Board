@@ -107,3 +107,34 @@ CREATE TABLE IF NOT EXISTS notification_preferences (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     UNIQUE(user_id)
 );
+
+CREATE TABLE IF NOT EXISTS subscriptions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    plan VARCHAR(20) NOT NULL DEFAULT 'free',
+    status VARCHAR(20) NOT NULL DEFAULT 'active',
+    current_period_start TIMESTAMPTZ,
+    current_period_end TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE(user_id)
+);
+
+CREATE TABLE IF NOT EXISTS payment_transactions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    subscription_id UUID REFERENCES subscriptions(id) ON DELETE SET NULL,
+    provider VARCHAR(50) NOT NULL,
+    provider_payment_id VARCHAR(255),
+    provider_order_id VARCHAR(255),
+    amount INTEGER NOT NULL,
+    currency VARCHAR(10) NOT NULL DEFAULT 'INR',
+    status VARCHAR(30) NOT NULL DEFAULT 'pending',
+    plan VARCHAR(20),
+    webhook_event_id VARCHAR(255),
+    metadata JSONB,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE(provider, provider_payment_id),
+    UNIQUE(provider, webhook_event_id)
+);

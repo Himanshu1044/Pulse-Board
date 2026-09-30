@@ -2,6 +2,7 @@ import pool from "../config/database";
 import { createActivityLog } from "./activityLogService";
 import { emitToProject } from "../socketEmitter";
 import { createNotification } from "./notificationService";
+import { canAddProjectMember } from "./subscriptionService";
 
 export const addProjectMember = async (
   projectId: string,
@@ -22,6 +23,14 @@ export const addProjectMember = async (
 
   if (!userResult.rows[0].email_verified) {
     throw new Error("User email is not verified");
+  }
+
+  const allowed = await canAddProjectMember(projectId);
+
+  if (!allowed) {
+    throw new Error(
+      "Project member limit reached for the current plan"
+    );
   }
 
   const result = await pool.query(

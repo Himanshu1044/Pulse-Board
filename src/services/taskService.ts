@@ -2,6 +2,7 @@ import pool from "../config/database.js";
 import { createActivityLog } from "./activityLogService";
 import { emitToProject } from "../socketEmitter";
 import { createNotification } from "./notificationService";
+import { canCreateTask } from "./subscriptionService";
 
 export const createTask = async (
     projectId: string,
@@ -13,6 +14,13 @@ export const createTask = async (
     assignedTo?: string,
     dueDate?: string
 ) => {
+    const allowed = await canCreateTask(projectId);
+
+    if (!allowed) {
+        throw new Error(
+            "Task limit reached for the current plan"
+        );
+    }
     const projectResult = await pool.query(
         `SELECT id
      FROM projects
