@@ -9,8 +9,16 @@ import notificationPreferenceRoutes from "./routes/notificationPreferenceRoutes"
 import subscriptionRoutes from "./routes/subscriptionRoutes";
 import paymentRoutes from "./routes/paymentRoutes";
 import paymentWebhookRoutes from "./routes/paymentWebhookRoutes";
+import userRoutes from "./routes/userRoutes";
+import cors from "cors";
 
 const app = express();
+
+app.use(
+    cors({
+        origin: "http://localhost:5173"
+    })
+);
 
 app.use(
     "/api/payments/webhook",
@@ -30,5 +38,6 @@ app.use("/api", notificationRoutes);
 app.use("/api", notificationPreferenceRoutes);
 app.use("/api", subscriptionRoutes);
 app.use("/api", paymentRoutes);
+app.use("/api/users", userRoutes);
 
 export default app;
