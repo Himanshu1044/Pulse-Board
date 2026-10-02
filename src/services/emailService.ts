@@ -24,7 +24,8 @@ export const sendPasswordResetEmail = async (
     email: string,
     token: string
 ) => {
-    const resetUrl = `http://localhost:5173/reset-password?token=${token}&email=${encodeURIComponent(email)}`;
+    const frontendUrl = (process.env.FRONTEND_URL || "http://localhost:5173").replace(/\/+$/, "");
+    const resetUrl = `${frontendUrl}/reset-password?token=${token}&email=${encodeURIComponent(email)}`;
 
     await resend.emails.send({
         from: process.env.EMAIL_FROM!,
