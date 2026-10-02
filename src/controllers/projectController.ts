@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import {
     createProject,
-    getProjectsByOwner,
+    getProjectsForUser,
     getProjectById,
     updateProject,
     deleteProject
@@ -34,7 +34,14 @@ export const createProjectController = async (
             message: "Project created successfully",
             project
         });
-    } catch (error) {
+    } catch (error: any) {
+        if (error.message === "Project limit reached for your current plan") {
+            return res.status(403).json({
+                code: "PLAN_LIMIT",
+                message: "You've reached the project limit for your plan. Upgrade to create more projects."
+            });
+        }
+
         console.error(error);
 
         return res.status(500).json({
@@ -48,7 +55,7 @@ export const getProjectsController = async (
     res: Response
 ) => {
     try {
-        const projects = await getProjectsByOwner(
+        const projects = await getProjectsForUser(
             req.user!.userId
         );
 

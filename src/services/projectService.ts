@@ -45,13 +45,15 @@ export const createProject = async (
   }
 };
 
-export const getProjectsByOwner = async (ownerId: string) => {
+export const getProjectsForUser = async (userId: string) => {
   const result = await pool.query(
-    `SELECT id, owner_id, name, description, created_at, updated_at
-     FROM projects
-     WHERE owner_id = $1
-     ORDER BY created_at DESC`,
-    [ownerId]
+    `SELECT p.id, p.owner_id, p.name, p.description,
+            p.created_at, p.updated_at, pm.role
+     FROM projects p
+     JOIN project_members pm ON pm.project_id = p.id
+     WHERE pm.user_id = $1
+     ORDER BY p.created_at DESC`,
+    [userId]
   );
 
   return result.rows;
@@ -59,14 +61,16 @@ export const getProjectsByOwner = async (ownerId: string) => {
 
 export const getProjectById = async (
   projectId: string,
-  ownerId: string
+  userId: string
 ) => {
   const result = await pool.query(
-    `SELECT id, owner_id, name, description, created_at, updated_at
-     FROM projects
-     WHERE id = $1
-       AND owner_id = $2`,
-    [projectId, ownerId]
+    `SELECT p.id, p.owner_id, p.name, p.description,
+            p.created_at, p.updated_at, pm.role
+     FROM projects p
+     JOIN project_members pm ON pm.project_id = p.id
+     WHERE p.id = $1
+       AND pm.user_id = $2`,
+    [projectId, userId]
   );
 
   if (result.rows.length === 0) {

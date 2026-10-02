@@ -70,6 +70,13 @@ export const addProjectMemberController = async (
       });
     }
 
+    if (error.message === "Project member limit reached for the current plan") {
+      return res.status(403).json({
+        code: "PLAN_LIMIT",
+        message: "This project has reached its member limit for the current plan."
+      });
+    }
+
     if (error.code === "23505") {
       return res.status(409).json({
         message: "User is already a member of this project"

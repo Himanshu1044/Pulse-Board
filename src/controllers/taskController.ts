@@ -59,6 +59,13 @@ export const createTaskController = async (req: Request, res: Response) => {
             });
         }
 
+        if (error.message === "Task limit reached for the current plan") {
+            return res.status(403).json({
+                code: "PLAN_LIMIT",
+                message: "This project has reached its task limit for the current plan."
+            });
+        }
+
         if (error.message === "Assigned user is not a project member") {
             return res.status(400).json({
                 message: error.message
